@@ -1,5 +1,8 @@
-import { auth } from '@/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
 import { NextResponse } from 'next/server';
+
+const { auth } = NextAuth(authConfig);
 
 const AUTH_ROUTES = ['/api/auth'];
 // These pages are accessible even after login (don't redirect away)
