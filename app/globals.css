@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+:root {
+  --navy-dark: #0a192f;
+  --navy-lighter: #112240;
+  --navy-lightest: #233554;
+  --slate: #8892b0;
+  --light-slate: #a8b2d1;
+  --white: #e6f1ff;
+  --accent: #64ffda; /* Cyan accent */
+  --accent-soft: rgba(100, 255, 218, 0.1);
+  --glass: rgba(17, 34, 64, 0.7);
+  --border-radius: 12px;
+  --transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--navy-dark);
+  color: var(--light-slate);
+  font-family: 'Outfit', sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  color: var(--white);
+  font-weight: 700;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+a:hover {
+  text-shadow: 0 0 10px var(--accent);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+section {
+  padding: 5rem 0;
+}
+
+
+/* Glassmorphism Card */
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: var(--transition);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 30px -15px rgba(2, 12, 27, 0.7);
+}
+
+/* Form Styles */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+input, select, textarea {
+  background: var(--navy-lighter);
+  border: 1px solid var(--navy-lightest);
+  border-radius: 8px;
+  color: var(--white);
+  padding: 0.8rem;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+button {
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--accent);
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+button:hover {
+  background: var(--accent-soft);
+  box-shadow: 0 0 15px var(--accent-soft);
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--navy-dark);
+}
+
+button.primary:hover {
+  background: var(--accent);
+  opacity: 0.9;
+}
+
+/* Nav */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: var(--glass);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 2rem;
+  z-index: 1000;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-decoration: none;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-trigger {
+  cursor: pointer;
+  color: var(--accent);
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.dropdown-trigger:hover {
+  color: var(--accent);
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: var(--navy-lighter);
+  width: max-content;
+  min-width: 120px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+  z-index: 1000;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  color: var(--accent);
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.dropdown-content a:hover {
+  background-color: var(--accent-soft);
+  color: var(--white);
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8rem 1rem;
+}
+
+.hero h1 {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.1;
+  background: linear-gradient(to right, #fff, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
+.hero p {
+  font-size: 1.25rem;
+  margin-bottom: 2.5rem;
+  color: var(--slate);
+}
+
+/* Features / Solutions Secton (Inspired by DB1) */
+.section-title {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.section-title h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.solution-card {
+  padding: 2.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.solution-icon {
+  font-size: 2.5rem;
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.solution-card h3 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.solution-card p {
+  color: var(--slate);
+  font-size: 1rem;
+  flex-grow: 1;
+}
+
+/* Contact Section */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.contact-info h3 {
+  margin-bottom: 1rem;
+}
+
+.contact-info p {
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 992px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .hero h1 {
+    font-size: 3rem;
+  }
+}
+
+
+/* Responsive Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  .nav-links {
+    gap: 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+.dashboard-container, .relatorio-container {
+  padding-left: 10mm;
+  padding-right: 10mm;
+}
+
+@media (max-width: 600px) {
+  .dashboard-container, .relatorio-container {
+    padding-left: 4mm;
+    padding-right: 4mm;
+  }
+}
+
+.desktop-only-flex {
+  display: flex !important;
+}
+
+@media (max-width: 850px) {
+  .desktop-only-flex {
+    display: none !important;
+  }
+}
+
+/* Footer Styling */
+footer {
+  margin-top: 4rem;
+  padding: 2rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  font-size: 0.9rem;
+  color: var(--slate);
+}
+
+.footer-logo {
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
