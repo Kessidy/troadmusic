@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── SaaS: Tenant & License ───────────────────────────────────────────
+
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  license     License?
+  users       User[]
+  musicians   Musician[]
+  songs       Song[]
+  events      Event[]
+  departments Department[]
+  roles       Role[]
+  config      Config?
+  createdAt   DateTime     @default(now())
+}
+
+model License {
+  id        String   @id @default(uuid())
+  tenantId  String   @unique
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan      String   @default("basic")   // basic | pro
+  status    String   @default("active")  // active | suspended | expired
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemConfig {
+  id               String   @id @default("global")
+  priceBasic       Float    @default(50.00)
+  pricePro         Float    @default(100.00)
+  // SMTP Config
+  smtpHost         String?
+  smtpPort         Int?     @default(587)
+  smtpUser         String?
+  smtpPass         String?
+  smtpSecure       Boolean? @default(false)
+  // Telegram Config
+  telegramBotToken String?
+  updatedAt        DateTime @updatedAt
+}
+
+// ─── Auth: User + NextAuth Models ────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+  name          String?
+  firstName     String?
+  lastName      String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?
+  password      String?
+  role          String    @default("USER") // SUPERADMIN | ADMIN | USER
+  isBlocked     Boolean   @default(false)
+  ministry      String?
+  lastLoginAt           DateTime?
+  invitationToken       String?   @unique
+  invitationTokenExpires DateTime?
+  createdAt             DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── App Models (with tenantId) ───────────────────────────────────────
+
+model Musician {
+  id               String          @id @default(uuid())
+  tenantId         String?
+  tenant           Tenant?         @relation(fields: [tenantId], references: [id])
+  firstName        String
+  lastName         String
+  phone            String
+  email            String?
+  telegramChatId   String?
+  roles            Role[]
+  departments      Department[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  eventAssignments EventMusician[]
+}
+
+model Role {
+  id               String          @id @default(uuid())
+  tenantId         String?
+  tenant           Tenant?         @relation(fields: [tenantId], references: [id])
+  name             String
+  musicians        Musician[]
+  eventAssignments EventMusician[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([name, tenantId])
+}
+
+model Department {
+  id        String     @id @default(uuid())
+  tenantId  String?
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id])
+  name      String
+  color     String     @default("#64ffda")
+  events    Event[]
+  musicians Musician[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([name, tenantId])
+}
+
+model Song {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+  title       String
+  youtubeLink String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]  @relation("EventSongs")
+}
+
+model Event {
+  id                  String          @id @default(uuid())
+  tenantId            String?
+  tenant              Tenant?         @relation(fields: [tenantId], references: [id])
+  name                String
+  address             String
+  eventDate           DateTime?
+  status              String          @default("ativo")
+  departmentId        String?
+  department          Department?     @relation(fields: [departmentId], references: [id])
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  musicianAssignments EventMusician[]
+  songs               Song[]          @relation("EventSongs")
+}
+
+model EventMusician {
+  id         String    @id @default(uuid())
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  musicianId String
+  musician   Musician  @relation(fields: [musicianId], references: [id], onDelete: Cascade)
+  roleId     String?
+  role       Role?     @relation(fields: [roleId], references: [id])
+
+  @@unique([eventId, musicianId])
+}
+
+model Config {
+  id                 String   @id @default(uuid())
+  tenantId           String?  @unique
+  tenant             Tenant?  @relation(fields: [tenantId], references: [id])
+  repertoireLoopDays Int      @default(15)
+  updatedAt          DateTime @updatedAt
+}
