@@ -179,6 +179,7 @@ export default function Navbar() {
                   <Link href="/#solucoes" className="nav-link-public" style={{ fontSize: '1rem' }}>Soluções</Link>
                   <Link href="/#planos" className="nav-link-public" style={{ fontSize: '1rem' }}>Preços & Planos</Link>
                   <Link href="/#contato" className="nav-link-public" style={{ fontSize: '1rem' }}>Fale Conosco</Link>
+                  <Link href="/login" className="login-btn-public" style={{ fontSize: '1rem', textAlign: 'center', marginTop: '0.5rem' }}>Fazer Login</Link>
                 </>
               )}
             </>
