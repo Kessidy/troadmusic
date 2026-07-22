@@ -145,7 +145,7 @@ export default async function Home() {
               
               <div style={{ marginTop: '2.5rem' }}>
                 <h3 style={{ color: 'var(--accent)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>E-mail</h3>
-                <p style={{ color: 'var(--slate)', marginBottom: '1.5rem' }}>contato@troadtec.com.br</p>
+                <p style={{ color: 'var(--slate)', marginBottom: '1.5rem' }}>contato@troadmusic.com</p>
                 
                 <h3 style={{ color: 'var(--accent)', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>Endereço</h3>
                 <p style={{ color: 'var(--slate)' }}>TROADTEC Segurança e Tecnologia Ltda.<br />Santa Catarina, Brasil</p>
