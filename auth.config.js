@@ -1,4 +1,5 @@
 export const authConfig = {
+  trustHost: true,
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   providers: [], // Providers are populated in auth.js to avoid loading Prisma in Edge Runtime
