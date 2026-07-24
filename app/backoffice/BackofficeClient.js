@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   createTenant, updateLicense, blockUser, unblockUser, updateTenantStatus,
   setUserRole, adminResetPassword, createUserForTenant, assignUserToTenant, deleteTenant,
-  deleteUser
+  deleteUser, updateUserEmail
 } from '@/app/actions/backoffice';
 
 const STATUS_COLORS = { active: '#64ffda', suspended: '#ff4d4d', expired: '#f0a500' };
@@ -26,6 +26,8 @@ function TenantPanel({ tenant, onRefresh }) {
   const [addingUser, setAddingUser] = useState(false);
   const [editLicense, setEditLicense] = useState(false);
   const [msg, setMsg] = useState('');
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editingEmailValue, setEditingEmailValue] = useState('');
   const lic = tenant.license;
   const licStatus = lic ? (lic.status === 'active' && isPast(lic.expiresAt) ? 'expired' : lic.status) : 'none';
 
@@ -135,33 +137,66 @@ function TenantPanel({ tenant, onRefresh }) {
               </form>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.2fr 80px 100px 140px 100px', gap: '0.5rem', fontSize: '0.7rem', color: 'var(--slate)', padding: '0.4rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.2fr 80px 100px 140px 120px', gap: '0.5rem', fontSize: '0.7rem', color: 'var(--slate)', padding: '0.4rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <span>E-mail</span><span>Telefone</span><span>Role</span><span>Status</span><span>Último Acesso</span><span>Ações</span>
             </div>
 
-            {tenant.users.map(u => (
-              <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.2fr 80px 100px 140px 100px', gap: '0.5rem', alignItems: 'center', padding: '0.7rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.82rem' }}>
-                <span style={{ color: 'var(--light-slate)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.email}>{u.email}</span>
-                <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
-                <span style={{ color: u.role === 'ADMIN' ? 'var(--accent)' : 'var(--slate)' }}>{u.role}</span>
-                <span style={{ color: u.isBlocked ? '#ff4d4d' : '#64ffda' }}>{u.isBlocked ? '🔴 Bloq.' : '✅ Ativo'}</span>
-                <span style={{ color: 'var(--slate)', fontSize: '0.75rem' }}>{formatDateTime(u.lastLoginAt)}</span>
-                <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  <button onClick={async () => { u.isBlocked ? await unblockUser(u.id) : await blockUser(u.id); setMsg(`Usuário ${u.isBlocked ? 'desbloqueado' : 'bloqueado'}.`); }}
-                    style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: u.isBlocked ? 'rgba(100,255,218,0.1)' : 'rgba(255,77,77,0.1)', border: `1px solid ${u.isBlocked ? 'rgba(100,255,218,0.2)' : 'rgba(255,77,77,0.2)'}`, borderRadius: '4px', color: u.isBlocked ? 'var(--accent)' : '#ff6b6b', cursor: 'pointer' }}>
-                    {u.isBlocked ? 'Ativar' : 'Bloquear'}
-                  </button>
-                  <button onClick={async () => { if (confirm(`Resetar senha de ${u.email} para Troadmusic@123?`)) { await adminResetPassword(u.id); setMsg('Senha resetada para Troadmusic@123'); } }}
-                    style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Resetar Senha">
-                    🔑
-                  </button>
-                  <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) setMsg(r.error); else setMsg('Usuário excluído!'); } }}
-                    style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,77,77,0.05)', border: '1px solid rgba(255,77,77,0.1)', borderRadius: '4px', color: '#ff4d4d', cursor: 'pointer' }} title="Excluir Usuário">
-                    🗑️
-                  </button>
+            {tenant.users.map(u => {
+              const isEditing = editingUserId === u.id;
+              return (
+                <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.2fr 80px 100px 140px 120px', gap: '0.5rem', alignItems: 'center', padding: '0.7rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.82rem' }}>
+                  {isEditing ? (
+                    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
+                      <input
+                        type="email"
+                        value={editingEmailValue}
+                        onChange={(e) => setEditingEmailValue(e.target.value)}
+                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
+                      />
+                      <button onClick={async () => {
+                        const fd = new FormData();
+                        fd.append('userId', u.id);
+                        fd.append('email', editingEmailValue);
+                        const r = await updateUserEmail(fd);
+                        if (!r?.error) {
+                          setEditingUserId(null);
+                          setMsg('E-mail atualizado com sucesso!');
+                        } else {
+                          alert(r.error);
+                        }
+                      }} style={{ background: 'rgba(100,255,218,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: 'var(--accent)', fontSize: '0.8rem' }} title="Salvar">💾</button>
+                      <button onClick={() => setEditingUserId(null)} style={{ background: 'rgba(255,77,77,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#ff6b6b', fontSize: '0.8rem' }} title="Cancelar">✕</button>
+                    </div>
+                  ) : (
+                    <span style={{ color: 'var(--light-slate)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.email}>{u.email}</span>
+                  )}
+                  <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
+                  <span style={{ color: u.role === 'ADMIN' ? 'var(--accent)' : 'var(--slate)' }}>{u.role}</span>
+                  <span style={{ color: u.isBlocked ? '#ff4d4d' : '#64ffda' }}>{u.isBlocked ? '🔴 Bloq.' : '✅ Ativo'}</span>
+                  <span style={{ color: 'var(--slate)', fontSize: '0.75rem' }}>{formatDateTime(u.lastLoginAt)}</span>
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    <button onClick={async () => { u.isBlocked ? await unblockUser(u.id) : await blockUser(u.id); setMsg(`Usuário ${u.isBlocked ? 'desbloqueado' : 'bloqueado'}.`); }}
+                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: u.isBlocked ? 'rgba(100,255,218,0.1)' : 'rgba(255,77,77,0.1)', border: `1px solid ${u.isBlocked ? 'rgba(100,255,218,0.2)' : 'rgba(255,77,77,0.2)'}`, borderRadius: '4px', color: u.isBlocked ? 'var(--accent)' : '#ff6b6b', cursor: 'pointer' }}>
+                      {u.isBlocked ? 'Ativar' : 'Bloquear'}
+                    </button>
+                    <button onClick={async () => { if (confirm(`Resetar senha de ${u.email} para Troadmusic@123?`)) { await adminResetPassword(u.id); setMsg('Senha resetada para Troadmusic@123'); } }}
+                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Resetar Senha">
+                      🔑
+                    </button>
+                    {!isEditing && (
+                      <button onClick={() => { setEditingUserId(u.id); setEditingEmailValue(u.email); }}
+                        style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Editar E-mail">
+                        ✏️
+                      </button>
+                    )}
+                    <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) setMsg(r.error); else setMsg('Usuário excluído!'); } }}
+                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,77,77,0.05)', border: '1px solid rgba(255,77,77,0.1)', borderRadius: '4px', color: '#ff4d4d', cursor: 'pointer' }} title="Excluir Usuário">
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {tenant.users.length === 0 && <p style={{ color: 'var(--slate)', fontSize: '0.8rem', padding: '0.8rem', textAlign: 'center' }}>Nenhum usuário neste tenant.</p>}
           </div>
 
@@ -198,6 +233,8 @@ export default function BackofficeClient({ tenants, pendingUsers = [] }) {
   const [showDashboard, setShowDashboard] = useState(false);
   const [msg, setMsg] = useState('');
   const [search, setSearch] = useState('');
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editingEmailValue, setEditingEmailValue] = useState('');
 
   return (
     <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
@@ -311,44 +348,93 @@ export default function BackofficeClient({ tenants, pendingUsers = [] }) {
 
           {/* Pending Users Card */}
           {pendingUsers.length > 0 && (
-            <div className="card" style={{ marginBottom: '1.5rem', padding: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.1rem', color: '#ff6b6b', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.1rem', color: '#ff6b6b', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 👥 Usuários Pendentes (Sem Ministério / Tenant)
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {pendingUsers.map(u => (
-                  <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1.2rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div>
-                      <div style={{ fontWeight: '600', color: 'var(--white)' }}>{u.name || 'Sem Nome'}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--slate)', marginTop: '2px' }}>{u.email}</div>
-                    </div>
-                    <form action={async (fd) => {
-                      fd.append('userId', u.id);
-                      const r = await assignUserToTenant(fd);
-                      if (!r?.error) {
-                        alert('Usuário vinculado com sucesso!');
-                        window.location.reload();
-                      } else {
-                        alert(r.error);
-                      }
-                    }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <select name="tenantId" required style={{ padding: '0.45rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px' }}>
-                        <option value="" disabled selected>Selecionar Ministério...</option>
-                        {tenants.map(t => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </select>
-                      <select name="role" style={{ padding: '0.45rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px' }}>
-                        <option value="USER">USER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                      <button type="submit" className="primary" style={{ padding: '0.45rem 1rem', fontSize: '0.8rem' }}>Vincular</button>
-                    </form>
-                  </div>
-                ))}
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 60px 100px 350px', gap: '0.5rem', fontSize: '0.7rem', color: 'var(--slate)', padding: '0.4rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span>E-mail</span><span>Telefone</span><span>Role</span><span>Status</span><span>Ações</span>
               </div>
+
+              {pendingUsers.map(u => {
+                const isEditing = editingUserId === u.id;
+                return (
+                  <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 60px 100px 350px', gap: '0.5rem', alignItems: 'center', padding: '0.7rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.82rem' }}>
+                    {isEditing ? (
+                      <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
+                        <input
+                          type="email"
+                          value={editingEmailValue}
+                          onChange={(e) => setEditingEmailValue(e.target.value)}
+                          style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
+                        />
+                        <button onClick={async () => {
+                          const fd = new FormData();
+                          fd.append('userId', u.id);
+                          fd.append('email', editingEmailValue);
+                          const r = await updateUserEmail(fd);
+                          if (!r?.error) {
+                            setEditingUserId(null);
+                            alert('E-mail atualizado com sucesso!');
+                            window.location.reload();
+                          } else {
+                            alert(r.error);
+                          }
+                        }} style={{ background: 'rgba(100,255,218,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: 'var(--accent)', fontSize: '0.8rem' }} title="Salvar">💾</button>
+                        <button onClick={() => setEditingUserId(null)} style={{ background: 'rgba(255,77,77,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#ff6b6b', fontSize: '0.8rem' }} title="Cancelar">✕</button>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--light-slate)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.email}>{u.email}</span>
+                    )}
+                    <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
+                    <span style={{ color: 'var(--slate)' }}>{u.role}</span>
+                    <span style={{ color: '#f0a500', fontWeight: '500' }}>⚠️ Pendente</span>
+                    
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-start' }}>
+                      <form action={async (fd) => {
+                        fd.append('userId', u.id);
+                        const r = await assignUserToTenant(fd);
+                        if (!r?.error) {
+                          alert('Usuário vinculado com sucesso!');
+                          window.location.reload();
+                        } else {
+                          alert(r.error);
+                        }
+                      }} style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
+                        <select name="tenantId" required style={{ padding: '0.3rem', fontSize: '0.75rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px', width: '140px', outline: 'none' }}>
+                          <option value="" disabled selected>Vincular a...</option>
+                          {tenants.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        <select name="role" style={{ padding: '0.3rem', fontSize: '0.75rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px', outline: 'none' }}>
+                          <option value="USER">USER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                        <button type="submit" className="primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '4px' }}>Vincular</button>
+                      </form>
+
+                      {/* Edit Email button */}
+                      {!isEditing && (
+                        <button onClick={() => { setEditingUserId(u.id); setEditingEmailValue(u.email); }}
+                          style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Editar E-mail">
+                          ✏️
+                        </button>
+                      )}
+
+                      {/* Delete button */}
+                      <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário pendente ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) alert(r.error); else { alert('Usuário excluído com sucesso!'); window.location.reload(); } } }}
+                        style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'rgba(255,77,77,0.05)', border: '1px solid rgba(255,77,77,0.1)', borderRadius: '4px', color: '#ff4d4d', cursor: 'pointer' }} title="Excluir Usuário">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
+
 
           {/* Table Header */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 100px 110px 110px 100px 110px', gap: '0.8rem', padding: '0.5rem 1.5rem', fontSize: '0.7rem', color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>

@@ -199,3 +199,31 @@ export async function deleteUser(userId) {
     return { error: 'Falha ao deletar usuário.' };
   }
 }
+
+export async function updateUserEmail(formData) {
+  const userId = formData.get('userId');
+  const email = formData.get('email')?.toLowerCase().trim();
+
+  if (!userId || !email) {
+    return { error: 'ID do usuário e e-mail são obrigatórios.' };
+  }
+
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.id !== userId) {
+      return { error: 'Este e-mail já está em uso por outro usuário.' };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { email }
+    });
+
+    revalidatePath('/backoffice');
+    return { success: true };
+  } catch (error) {
+    console.error('Erro ao atualizar e-mail do usuário:', error);
+    return { error: 'Erro ao atualizar e-mail.' };
+  }
+}
+

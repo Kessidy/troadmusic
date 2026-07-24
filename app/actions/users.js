@@ -159,3 +159,34 @@ export async function acceptInvitation(token, newPassword) {
     return { error: 'Erro ao definir a senha. Tente novamente.' };
   }
 }
+
+export async function changeUserPassword(formData) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: 'Não autorizado.' };
+
+  const currentPassword = formData.get('currentPassword');
+  const newPassword = formData.get('newPassword');
+
+  if (!currentPassword || !newPassword) {
+    return { error: 'Senha atual e nova senha são obrigatórias.' };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!user || !user.password) {
+    return { error: 'Usuário não encontrado.' };
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) {
+    return { error: 'Senha atual incorreta.' };
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { password: hashed }
+  });
+
+  return { success: true };
+}
+

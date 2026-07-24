@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { changeUserPassword } from '@/app/actions/users';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -11,6 +12,14 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => { setIsMenuOpen(false); }, [pathname]);
 
@@ -139,8 +148,12 @@ export default function Navbar() {
                     <div style={{ fontSize: '0.8rem', color: 'var(--white)', fontWeight: '600' }}>{session.user.name}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--slate)', marginTop: '2px' }}>{session.user.email}</div>
                   </div>
+                  <button onClick={() => { setShowUserMenu(false); setShowChangePasswordModal(true); }}
+                    style={{ width: '100%', padding: '0.5rem 0.8rem', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🔑 Alterar Senha
+                  </button>
                   <button onClick={handleLogout}
-                    style={{ width: '100%', padding: '0.5rem 0.8rem', background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', borderRadius: '4px' }}>
+                    style={{ width: '100%', padding: '0.5rem 0.8rem', background: 'transparent', border: 'none', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     🚪 Sair
                   </button>
                 </div>
@@ -205,6 +218,102 @@ export default function Navbar() {
         }
       `}</style>
     </nav>
+
+    {/* Change Password Modal */}
+    {showChangePasswordModal && (
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(10, 25, 47, 0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, animation: 'fadeIn 0.2s ease' }}>
+        <div style={{ background: 'var(--navy-lighter)', border: '1px solid rgba(100, 255, 218, 0.15)', borderRadius: '12px', padding: '2rem', width: '90%', maxWidth: '400px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+          <h2 style={{ fontSize: '1.25rem', color: 'var(--accent)', fontWeight: '700', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🔑 Alterar Minha Senha
+          </h2>
+
+          {errorMsg && <div style={{ color: '#ff6b6b', background: 'rgba(255,107,107,0.1)', padding: '0.75rem', borderRadius: '6px', fontSize: '0.82rem', marginBottom: '1rem' }}>{errorMsg}</div>}
+          {successMsg && <div style={{ color: 'var(--accent)', background: 'rgba(100,255,218,0.1)', padding: '0.75rem', borderRadius: '6px', fontSize: '0.82rem', marginBottom: '1rem' }}>{successMsg}</div>}
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setErrorMsg('');
+            setSuccessMsg('');
+
+            if (newPassword !== confirmPassword) {
+              setErrorMsg('As senhas não coincidem.');
+              return;
+            }
+            if (newPassword.length < 6) {
+              setErrorMsg('A nova senha deve ter pelo menos 6 caracteres.');
+              return;
+            }
+
+            setLoading(true);
+            const fd = new FormData();
+            fd.append('currentPassword', currentPassword);
+            fd.append('newPassword', newPassword);
+
+            try {
+              const res = await changeUserPassword(fd);
+              if (res?.success) {
+                setSuccessMsg('Senha alterada com sucesso!');
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+                setTimeout(() => {
+                  setShowChangePasswordModal(false);
+                  setSuccessMsg('');
+                }, 2000);
+              } else {
+                setErrorMsg(res?.error || 'Erro ao alterar a senha.');
+              }
+            } catch (err) {
+              setErrorMsg('Erro inesperado ao alterar a senha.');
+            } finally {
+              setLoading(false);
+            }
+          }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', color: 'var(--slate)', display: 'block', marginBottom: '0.3rem' }}>Senha Atual</label>
+              <input
+                type="password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                style={{ width: '100%', padding: '0.6rem 0.8rem', background: 'var(--navy)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--white)', outline: 'none' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.75rem', color: 'var(--slate)', display: 'block', marginBottom: '0.3rem' }}>Nova Senha</label>
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                style={{ width: '100%', padding: '0.6rem 0.8rem', background: 'var(--navy)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--white)', outline: 'none' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.75rem', color: 'var(--slate)', display: 'block', marginBottom: '0.3rem' }}>Confirmar Nova Senha</label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={{ width: '100%', padding: '0.6rem 0.8rem', background: 'var(--navy)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--white)', outline: 'none' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
+              <button type="submit" className="primary" disabled={loading} style={{ flex: 1, padding: '0.6rem' }}>
+                {loading ? 'Salvando...' : 'Salvar'}
+              </button>
+              <button type="button" onClick={() => { setShowChangePasswordModal(false); setErrorMsg(''); setSuccessMsg(''); }} style={{ flex: 1, padding: '0.6rem', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--slate)', background: 'transparent', cursor: 'pointer', borderRadius: '8px' }}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
     </>
   );
 }
