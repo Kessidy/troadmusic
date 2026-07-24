@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   createTenant, updateLicense, blockUser, unblockUser, updateTenantStatus,
   setUserRole, adminResetPassword, createUserForTenant, assignUserToTenant, deleteTenant,
-  deleteUser, updateUserEmail: updateUserEmailAndPhone
+  deleteUser, updateUserEmailAndPhone
 } from '@/app/actions/backoffice';
 
 const STATUS_COLORS = { active: '#64ffda', suspended: '#ff4d4d', expired: '#f0a500' };
@@ -408,7 +408,7 @@ export default function BackofficeClient({ tenants, pendingUsers = [] }) {
                             fd.append('userId', u.id);
                             fd.append('email', editingEmailValue);
                             fd.append('phone', editingPhoneValue);
-                            const r = await updateUserEmail(fd);
+                            const r = await updateUserEmailAndPhone(fd);
                             if (!r?.error) {
                               setEditingUserId(null);
                               alert('Cadastro atualizado com sucesso!');
