@@ -193,7 +193,7 @@ function TenantPanel({ tenant, onRefresh }) {
   );
 }
 
-export default function BackofficeClient({ tenants }) {
+export default function BackofficeClient({ tenants, pendingUsers = [] }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [msg, setMsg] = useState('');
@@ -308,6 +308,47 @@ export default function BackofficeClient({ tenants }) {
               {search ? `${tenants.filter(t => t.name.toLowerCase().includes(search.toLowerCase())).length} resultado(s)` : `${tenants.length} cliente(s)`}
             </div>
           </div>
+
+          {/* Pending Users Card */}
+          {pendingUsers.length > 0 && (
+            <div className="card" style={{ marginBottom: '1.5rem', padding: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.1rem', color: '#ff6b6b', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                👥 Usuários Pendentes (Sem Ministério / Tenant)
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {pendingUsers.map(u => (
+                  <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1.2rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: 'var(--white)' }}>{u.name || 'Sem Nome'}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--slate)', marginTop: '2px' }}>{u.email}</div>
+                    </div>
+                    <form action={async (fd) => {
+                      fd.append('userId', u.id);
+                      const r = await assignUserToTenant(fd);
+                      if (!r?.error) {
+                        alert('Usuário vinculado com sucesso!');
+                        window.location.reload();
+                      } else {
+                        alert(r.error);
+                      }
+                    }} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <select name="tenantId" required style={{ padding: '0.45rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px' }}>
+                        <option value="" disabled selected>Selecionar Ministério...</option>
+                        {tenants.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                      <select name="role" style={{ padding: '0.45rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px' }}>
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                      <button type="submit" className="primary" style={{ padding: '0.45rem 1rem', fontSize: '0.8rem' }}>Vincular</button>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Table Header */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 100px 110px 110px 100px 110px', gap: '0.8rem', padding: '0.5rem 1.5rem', fontSize: '0.7rem', color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>
