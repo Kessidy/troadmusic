@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   createTenant, updateLicense, blockUser, unblockUser, updateTenantStatus,
   setUserRole, adminResetPassword, createUserForTenant, assignUserToTenant, deleteTenant,
-  deleteUser, updateUserEmail
+  deleteUser, updateUserEmail: updateUserEmailAndPhone
 } from '@/app/actions/backoffice';
 
 const STATUS_COLORS = { active: '#64ffda', suspended: '#ff4d4d', expired: '#f0a500' };
@@ -28,6 +28,7 @@ function TenantPanel({ tenant, onRefresh }) {
   const [msg, setMsg] = useState('');
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
+  const [editingPhoneValue, setEditingPhoneValue] = useState('');
   const lic = tenant.license;
   const licStatus = lic ? (lic.status === 'active' && isPast(lic.expiresAt) ? 'expired' : lic.status) : 'none';
 
@@ -146,53 +147,65 @@ function TenantPanel({ tenant, onRefresh }) {
               return (
                 <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.2fr 80px 100px 140px 120px', gap: '0.5rem', alignItems: 'center', padding: '0.7rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.82rem' }}>
                   {isEditing ? (
-                    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
-                      <input
-                        type="email"
-                        value={editingEmailValue}
-                        onChange={(e) => setEditingEmailValue(e.target.value)}
-                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
-                      />
-                      <button onClick={async () => {
-                        const fd = new FormData();
-                        fd.append('userId', u.id);
-                        fd.append('email', editingEmailValue);
-                        const r = await updateUserEmail(fd);
-                        if (!r?.error) {
-                          setEditingUserId(null);
-                          setMsg('E-mail atualizado com sucesso!');
-                        } else {
-                          alert(r.error);
-                        }
-                      }} style={{ background: 'rgba(100,255,218,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: 'var(--accent)', fontSize: '0.8rem' }} title="Salvar">💾</button>
-                      <button onClick={() => setEditingUserId(null)} style={{ background: 'rgba(255,77,77,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#ff6b6b', fontSize: '0.8rem' }} title="Cancelar">✕</button>
-                    </div>
+                    <input
+                      type="email"
+                      value={editingEmailValue}
+                      onChange={(e) => setEditingEmailValue(e.target.value)}
+                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
+                    />
                   ) : (
                     <span style={{ color: 'var(--light-slate)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.email}>{u.email}</span>
                   )}
-                  <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
+                  
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editingPhoneValue}
+                      onChange={(e) => setEditingPhoneValue(e.target.value)}
+                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
+                    />
+                  ) : (
+                    <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
+                  )}
+                  
                   <span style={{ color: u.role === 'ADMIN' ? 'var(--accent)' : 'var(--slate)' }}>{u.role}</span>
                   <span style={{ color: u.isBlocked ? '#ff4d4d' : '#64ffda' }}>{u.isBlocked ? '🔴 Bloq.' : '✅ Ativo'}</span>
                   <span style={{ color: 'var(--slate)', fontSize: '0.75rem' }}>{formatDateTime(u.lastLoginAt)}</span>
+                  
                   <div style={{ display: 'flex', gap: '0.3rem' }}>
-                    <button onClick={async () => { u.isBlocked ? await unblockUser(u.id) : await blockUser(u.id); setMsg(`Usuário ${u.isBlocked ? 'desbloqueado' : 'bloqueado'}.`); }}
-                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: u.isBlocked ? 'rgba(100,255,218,0.1)' : 'rgba(255,77,77,0.1)', border: `1px solid ${u.isBlocked ? 'rgba(100,255,218,0.2)' : 'rgba(255,77,77,0.2)'}`, borderRadius: '4px', color: u.isBlocked ? 'var(--accent)' : '#ff6b6b', cursor: 'pointer' }}>
-                      {u.isBlocked ? 'Ativar' : 'Bloquear'}
-                    </button>
-                    <button onClick={async () => { if (confirm(`Resetar senha de ${u.email} para Troadmusic@123?`)) { await adminResetPassword(u.id); setMsg('Senha resetada para Troadmusic@123'); } }}
-                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Resetar Senha">
-                      🔑
-                    </button>
-                    {!isEditing && (
-                      <button onClick={() => { setEditingUserId(u.id); setEditingEmailValue(u.email); }}
-                        style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Editar E-mail">
-                        ✏️
-                      </button>
+                    {isEditing ? (
+                      <>
+                        <button onClick={async () => {
+                          const fd = new FormData();
+                          fd.append('userId', u.id);
+                          fd.append('email', editingEmailValue);
+                          fd.append('phone', editingPhoneValue);
+                          const r = await updateUserEmailAndPhone(fd);
+                          if (!r?.error) {
+                            setEditingUserId(null);
+                            setMsg('Cadastro atualizado com sucesso!');
+                          } else {
+                            alert(r.error);
+                          }
+                        }} style={{ background: 'rgba(100,255,218,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: 'var(--accent)', fontSize: '0.8rem' }} title="Salvar">💾</button>
+                        <button onClick={() => setEditingUserId(null)} style={{ background: 'rgba(255,77,77,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#ff6b6b', fontSize: '0.8rem' }} title="Cancelar">✕</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) setMsg(r.error); else setMsg('Usuário excluído!'); } }}
+                          style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,77,77,0.1)', border: '1px solid rgba(255,77,77,0.2)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer' }}>
+                          Excluir
+                        </button>
+                        <button onClick={async () => { if (confirm(`Resetar senha de ${u.email} para Troadmusic@123?`)) { await adminResetPassword(u.id); setMsg('Senha resetada para Troadmusic@123'); } }}
+                          style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Resetar Senha">
+                          🔑
+                        </button>
+                        <button onClick={() => { setEditingUserId(u.id); setEditingEmailValue(u.email); setEditingPhoneValue(u.phone || ''); }}
+                          style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Editar E-mail e Telefone">
+                          ✏️
+                        </button>
+                      </>
                     )}
-                    <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) setMsg(r.error); else setMsg('Usuário excluído!'); } }}
-                      style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem', background: 'rgba(255,77,77,0.05)', border: '1px solid rgba(255,77,77,0.1)', borderRadius: '4px', color: '#ff4d4d', cursor: 'pointer' }} title="Excluir Usuário">
-                      🗑️
-                    </button>
                   </div>
                 </div>
               );
@@ -235,6 +248,7 @@ export default function BackofficeClient({ tenants, pendingUsers = [] }) {
   const [search, setSearch] = useState('');
   const [editingUserId, setEditingUserId] = useState(null);
   const [editingEmailValue, setEditingEmailValue] = useState('');
+  const [editingPhoneValue, setEditingPhoneValue] = useState('');
 
   return (
     <div className="container" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
@@ -362,72 +376,87 @@ export default function BackofficeClient({ tenants, pendingUsers = [] }) {
                 return (
                   <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 60px 100px 350px', gap: '0.5rem', alignItems: 'center', padding: '0.7rem 0.8rem', borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '0.82rem' }}>
                     {isEditing ? (
-                      <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
-                        <input
-                          type="email"
-                          value={editingEmailValue}
-                          onChange={(e) => setEditingEmailValue(e.target.value)}
-                          style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
-                        />
-                        <button onClick={async () => {
-                          const fd = new FormData();
-                          fd.append('userId', u.id);
-                          fd.append('email', editingEmailValue);
-                          const r = await updateUserEmail(fd);
-                          if (!r?.error) {
-                            setEditingUserId(null);
-                            alert('E-mail atualizado com sucesso!');
-                            window.location.reload();
-                          } else {
-                            alert(r.error);
-                          }
-                        }} style={{ background: 'rgba(100,255,218,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: 'var(--accent)', fontSize: '0.8rem' }} title="Salvar">💾</button>
-                        <button onClick={() => setEditingUserId(null)} style={{ background: 'rgba(255,77,77,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#ff6b6b', fontSize: '0.8rem' }} title="Cancelar">✕</button>
-                      </div>
+                      <input
+                        type="email"
+                        value={editingEmailValue}
+                        onChange={(e) => setEditingEmailValue(e.target.value)}
+                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
+                      />
                     ) : (
                       <span style={{ color: 'var(--light-slate)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.email}>{u.email}</span>
                     )}
-                    <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
+
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editingPhoneValue}
+                        onChange={(e) => setEditingPhoneValue(e.target.value)}
+                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.8rem', background: 'var(--navy-lighter)', border: '1px solid var(--accent)', color: 'var(--white)', borderRadius: '4px', width: '100%', outline: 'none' }}
+                      />
+                    ) : (
+                      <span style={{ color: 'var(--slate)' }}>{u.phone || '—'}</span>
+                    )}
+
                     <span style={{ color: 'var(--slate)' }}>{u.role}</span>
                     <span style={{ color: '#f0a500', fontWeight: '500' }}>⚠️ Pendente</span>
                     
                     <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-start' }}>
-                      <form action={async (fd) => {
-                        fd.append('userId', u.id);
-                        const r = await assignUserToTenant(fd);
-                        if (!r?.error) {
-                          alert('Usuário vinculado com sucesso!');
-                          window.location.reload();
-                        } else {
-                          alert(r.error);
-                        }
-                      }} style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
-                        <select name="tenantId" required style={{ padding: '0.3rem', fontSize: '0.75rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px', width: '140px', outline: 'none' }}>
-                          <option value="" disabled selected>Vincular a...</option>
-                          {tenants.map(t => (
-                            <option key={t.id} value={t.id}>{t.name}</option>
-                          ))}
-                        </select>
-                        <select name="role" style={{ padding: '0.3rem', fontSize: '0.75rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px', outline: 'none' }}>
-                          <option value="USER">USER</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                        <button type="submit" className="primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '4px' }}>Vincular</button>
-                      </form>
+                      {isEditing ? (
+                        <>
+                          <button onClick={async () => {
+                            const fd = new FormData();
+                            fd.append('userId', u.id);
+                            fd.append('email', editingEmailValue);
+                            fd.append('phone', editingPhoneValue);
+                            const r = await updateUserEmail(fd);
+                            if (!r?.error) {
+                              setEditingUserId(null);
+                              alert('Cadastro atualizado com sucesso!');
+                              window.location.reload();
+                            } else {
+                              alert(r.error);
+                            }
+                          }} style={{ background: 'rgba(100,255,218,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: 'var(--accent)', fontSize: '0.8rem' }} title="Salvar">💾</button>
+                          <button onClick={() => setEditingUserId(null)} style={{ background: 'rgba(255,77,77,0.15)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.25rem 0.5rem', color: '#ff6b6b', fontSize: '0.8rem' }} title="Cancelar">✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <form action={async (fd) => {
+                            fd.append('userId', u.id);
+                            const r = await assignUserToTenant(fd);
+                            if (!r?.error) {
+                              alert('Usuário vinculado com sucesso!');
+                              window.location.reload();
+                            } else {
+                              alert(r.error);
+                            }
+                          }} style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', margin: 0 }}>
+                            <select name="tenantId" required style={{ padding: '0.3rem', fontSize: '0.75rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px', width: '140px', outline: 'none' }}>
+                              <option value="" disabled selected>Vincular a...</option>
+                              {tenants.map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
+                            <select name="role" style={{ padding: '0.3rem', fontSize: '0.75rem', background: 'var(--navy-lighter)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--white)', borderRadius: '4px', outline: 'none' }}>
+                              <option value="USER">USER</option>
+                              <option value="ADMIN">ADMIN</option>
+                            </select>
+                            <button type="submit" className="primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '4px' }}>Vincular</button>
+                          </form>
 
-                      {/* Edit Email button */}
-                      {!isEditing && (
-                        <button onClick={() => { setEditingUserId(u.id); setEditingEmailValue(u.email); }}
-                          style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Editar E-mail">
-                          ✏️
-                        </button>
+                          {/* Edit button */}
+                          <button onClick={() => { setEditingUserId(u.id); setEditingEmailValue(u.email); setEditingPhoneValue(u.phone || ''); }}
+                            style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--slate)', cursor: 'pointer' }} title="Editar E-mail e Telefone">
+                            ✏️
+                          </button>
+
+                          {/* Delete button */}
+                          <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário pendente ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) alert(r.error); else { alert('Usuário excluído com sucesso!'); window.location.reload(); } } }}
+                            style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'rgba(255,77,77,0.05)', border: '1px solid rgba(255,77,77,0.1)', borderRadius: '4px', color: '#ff4d4d', cursor: 'pointer' }} title="Excluir Usuário">
+                            🗑️
+                          </button>
+                        </>
                       )}
-
-                      {/* Delete button */}
-                      <button onClick={async () => { if (confirm(`Deseja EXCLUIR definitivamente o usuário pendente ${u.email}?`)) { const r = await deleteUser(u.id); if(r?.error) alert(r.error); else { alert('Usuário excluído com sucesso!'); window.location.reload(); } } }}
-                        style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem', background: 'rgba(255,77,77,0.05)', border: '1px solid rgba(255,77,77,0.1)', borderRadius: '4px', color: '#ff4d4d', cursor: 'pointer' }} title="Excluir Usuário">
-                        🗑️
-                      </button>
                     </div>
                   </div>
                 );

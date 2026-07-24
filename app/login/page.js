@@ -133,6 +133,9 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState(COUNTRIES[0]); // Brasil default
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   const errorMessages = {
     BLOCKED: 'Sua conta está bloqueada. Entre em contato com o administrador.',
@@ -218,7 +221,13 @@ export default function LoginPage() {
               </div>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--slate)', display: 'block', marginBottom: '0.4rem' }}>Senha</label>
-                <input type="password" name="password" placeholder="••••••••" required style={{ width: '100%' }} />
+                <div style={{ position: 'relative' }}>
+                  <input type={showPassword ? 'text' : 'password'} name="password" placeholder="••••••••" required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--accent)', outline: 'none', display: 'flex', alignItems: 'center', padding: 0 }}>
+                    {showPassword ? '👁️' : '🙈'}
+                  </button>
+                </div>
               </div>
               <button type="submit" className="primary" disabled={loading} style={{ marginTop: '0.5rem', padding: '0.9rem', fontSize: '1rem', fontWeight: '600' }}>
                 {loading ? 'Entrando...' : 'Entrar'}
@@ -266,11 +275,23 @@ export default function LoginPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--slate)', display: 'block', marginBottom: '0.4rem' }}>Senha</label>
-                <input type="password" name="password" placeholder="Mínimo 6 caracteres" required minLength={6} style={{ width: '100%' }} />
+                <div style={{ position: 'relative' }}>
+                  <input type={showRegisterPassword ? 'text' : 'password'} name="password" placeholder="Mínimo 6 caracteres" required minLength={6} style={{ width: '100%', paddingRight: '2.5rem' }} />
+                  <button type="button" onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--accent)', outline: 'none', display: 'flex', alignItems: 'center', padding: 0 }}>
+                    {showRegisterPassword ? '👁️' : '🙈'}
+                  </button>
+                </div>
               </div>
               <div>
                 <label style={{ fontSize: '0.8rem', color: 'var(--slate)', display: 'block', marginBottom: '0.4rem' }}>Confirmar Senha</label>
-                <input type="password" name="confirmPassword" placeholder="••••••••" required style={{ width: '100%' }} />
+                <div style={{ position: 'relative' }}>
+                  <input type={showRegisterConfirmPassword ? 'text' : 'password'} name="confirmPassword" placeholder="••••••••" required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                  <button type="button" onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--accent)', outline: 'none', display: 'flex', alignItems: 'center', padding: 0 }}>
+                    {showRegisterConfirmPassword ? '👁️' : '🙈'}
+                  </button>
+                </div>
               </div>
 
               <button type="submit" className="primary" disabled={loading} style={{ marginTop: '0.5rem', padding: '0.9rem', fontSize: '1rem', fontWeight: '600' }}>

@@ -200,9 +200,10 @@ export async function deleteUser(userId) {
   }
 }
 
-export async function updateUserEmail(formData) {
+export async function updateUserEmailAndPhone(formData) {
   const userId = formData.get('userId');
   const email = formData.get('email')?.toLowerCase().trim();
+  const phone = formData.get('phone')?.trim();
 
   if (!userId || !email) {
     return { error: 'ID do usuário e e-mail são obrigatórios.' };
@@ -216,14 +217,14 @@ export async function updateUserEmail(formData) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { email }
+      data: { email, phone: phone || null }
     });
 
     revalidatePath('/backoffice');
     return { success: true };
   } catch (error) {
-    console.error('Erro ao atualizar e-mail do usuário:', error);
-    return { error: 'Erro ao atualizar e-mail.' };
+    console.error('Erro ao atualizar cadastro do usuário:', error);
+    return { error: 'Erro ao atualizar dados.' };
   }
 }
 
